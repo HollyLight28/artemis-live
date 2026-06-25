@@ -119,39 +119,40 @@ async def handle_get_token(request):
             "Content-Type": "application/json",
         }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                token_url,
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=15)
-            ) as resp:
-                if resp.status != 200:
-                    error_text = await resp.text()
-                    logger.error(
-                        f"❌ Gemini API помилка {resp.status}: {error_text}"
-                    )
-                    return web.json_response(
-                        {"error": f"Gemini API помилка: {resp.status}"},
-                        status=resp.status
-                    )
+        # Використовуємо google-genai SDK для створення ephemeral token
+        # REST API не працює напряму — потрібен SDK
+        try:
+            from google import genai
 
-                data = await resp.json()
-                token = data.get('name')
+            def create_token_sync():
+                client = genai.Client(
+                    api_key=GEMINI_API_KEY,
+                    http_options={'api_version': 'v1alpha'}
+                )
+                result = client.auth_tokens.create(config={'uses': 1})
+                return result.name
 
-                if not token:
-                    logger.error(f"❌ Токен не знайдено у відповіді: {data}")
-                    return web.json_response(
-                        {"error": "Помилка формату відповіді API"},
-                        status=500
-                    )
+            loop = asyncio.get_event_loop()
+            token = await loop.run_in_executor(None, create_token_sync)
 
-                logger.info(f"✅ Ephemeral token отримано для user_id={user_id}")
-                return web.json_response({
-                    "token": token,
-                    "expires_at": (now + timedelta(minutes=30)).isoformat(),
-                    "model": "gemini-3.1-flash-live-preview",
-                })
+            if not token:
+                return web.json_response(
+                    {"error": "Помилка отримання токена"},
+                    status=500
+                )
+
+            logger.info(f"✅ Ephemeral token отримано для user_id={user_id}")
+            return web.json_response({
+                "token": token,
+                "expires_at": (now + timedelta(minutes=30)).isoformat(),
+                "model": "gemini-3.1-flash-live-preview",
+            })
+        except ImportError:
+            logger.error("❌ google-genai SDK не встановлено. Встановіть: pip install google-genai")
+            return web.json_response(
+                {"error": "SDK не встановлено на сервері"},
+                status=500
+            )
 
     except asyncio.TimeoutError:
         logger.error("❌ Таймаут при запиті до Gemini API")
