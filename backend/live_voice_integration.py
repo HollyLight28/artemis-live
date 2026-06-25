@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 LIVE_WEBAPP_URL = "https://hollylight28.github.io/artemis-live"
 
 # URL для API сервера (передається як параметр ?server=...)
-# Змінити на реальний IP/домен сервера з ArtemisBot
+# 🚨 ЗМІНИТИ на реальний IP/домен сервера з ArtemisBot!
 API_SERVER_URL = "http://YOUR_SERVER_IP:8765"
 
 # ============================================================
