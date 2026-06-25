@@ -8,6 +8,7 @@ HTTP сервер для генерації ephemeral token для Gemini Live A
 Порт за замовчуванням: 8765
 
 Використання:
+  export GEMINI_API_KEY="..."
   python server.py                     # запуск сервера
   python server.py --port 8080         # на іншому порту
 """
@@ -19,10 +20,8 @@ import logging
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-import aiohttp
 from aiohttp import web
 
-# Налаштування логування
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
@@ -33,23 +32,8 @@ logger = logging.getLogger('artemis-live-api')
 # КОНФІГУРАЦІЯ
 # ============================================================
 
-# API ключі з оточення
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') or os.environ.get('GEMINI_FREE_KEY')
-ARTEMIS_DB_PATH = os.environ.get('MEMORY_DB_PATH', 'memory.db')
-ARTEMIS_TOKEN = os.environ.get('ARTEMIS_API_TOKEN', '')  # для мінімальної auth
-
-# URL для Gemini Live API
-# v1alpha — єдиний який підтримує ephemeral tokens
-GEMINI_API_BASE = os.environ.get(
-    'GEMINI_API_BASE',
-    'https://generativelanguage.googleapis.com/v1alpha'
-)
-
-# CORS — дозволяємо запити з GitHub Pages або інших доменів
-CORS_ORIGINS = os.environ.get(
-    'CORS_ORIGINS',
-    '*'  # В продакшені змінити на конкретний домен
-)
+CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
 # ============================================================
 # MIDDLEWARE
@@ -57,7 +41,6 @@ CORS_ORIGINS = os.environ.get(
 
 @web.middleware
 async def cors_middleware(request, handler):
-    """CORS middleware — дозволяє запити з WebApp"""
     if request.method == 'OPTIONS':
         response = web.Response()
     else:
@@ -77,153 +60,71 @@ async def cors_middleware(request, handler):
 async def handle_get_token(request):
     """
     POST /api/token
-    Генерує ephemeral token для Gemini Live API.
-
-    Використовує REST API напряму через v1alpha/authTokens.
-    Не потребує google-genai SDK.
+    Генерує ephemeral token через google-genai SDK.
+    Lazy import — SDK завантажується тільки при першому виклику.
     """
     logger.info("🔑 Запит на отримання ephemeral token")
 
     if not GEMINI_API_KEY:
-        logger.error("❌ GEMINI_API_KEY не налаштовано")
-        return web.json_response(
-            {"error": "API ключ не налаштовано"},
-            status=500
-        )
+        return web.json_response({"error": "API ключ не налаштовано"}, status=500)
 
     try:
-        # Опціонально: читаємо user_id з тіла запиту
         body = {}
         try:
             body = await request.json()
-        except (json.JSONDecodeError, Exception):
+        except Exception:
             pass
 
         user_id = body.get('user_id', 'unknown')
-
         now = datetime.now(timezone.utc)
 
-        # Формуємо запит до Gemini API для ephemeral token
-        # Документація:
-        # POST https://generativelanguage.googleapis.com/v1alpha/authTokens?key={API_KEY}
-        # Body: {"uses": 1, "expireTime": "...", "newSessionExpireTime": "..."}
-        token_url = f"{GEMINI_API_BASE}/authTokens?key={GEMINI_API_KEY}"
+        # Lazy import — SDK імпортується тільки тут (перший раз ~15с)
+        from google import genai
 
-        payload = {
-            "uses": 1,  # токен на 1 сесію
-            "expireTime": (now + timedelta(minutes=30)).isoformat(),
-            "newSessionExpireTime": (now + timedelta(minutes=5)).isoformat(),
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-        }
-
-        # Використовуємо google-genai SDK для створення ephemeral token
-        # REST API не працює напряму — потрібен SDK
-        try:
-            from google import genai
-
-            def create_token_sync():
-                client = genai.Client(
-                    api_key=GEMINI_API_KEY,
-                    http_options={'api_version': 'v1alpha'}
-                )
-                result = client.auth_tokens.create(config={'uses': 1})
-                return result.name
-
-            loop = asyncio.get_event_loop()
-            token = await loop.run_in_executor(None, create_token_sync)
-
-            if not token:
-                return web.json_response(
-                    {"error": "Помилка отримання токена"},
-                    status=500
-                )
-
-            logger.info(f"✅ Ephemeral token отримано для user_id={user_id}")
-            return web.json_response({
-                "token": token,
-                "expires_at": (now + timedelta(minutes=30)).isoformat(),
-                "model": "gemini-3.1-flash-live-preview",
-            })
-        except ImportError:
-            logger.error("❌ google-genai SDK не встановлено. Встановіть: pip install google-genai")
-            return web.json_response(
-                {"error": "SDK не встановлено на сервері"},
-                status=500
+        def create_token_sync():
+            client = genai.Client(
+                api_key=GEMINI_API_KEY,
+                http_options={'api_version': 'v1alpha'}
             )
+            result = client.auth_tokens.create(config={'uses': 1})
+            return result.name
 
-    except asyncio.TimeoutError:
-        logger.error("❌ Таймаут при запиті до Gemini API")
-        return web.json_response(
-            {"error": "Таймаут при отриманні токена"},
-            status=504
-        )
-    except aiohttp.ClientError as e:
-        logger.error(f"❌ Помилка мережі: {e}")
-        return web.json_response(
-            {"error": f"Мережева помилка: {str(e)}"},
-            status=502
-        )
+        loop = asyncio.get_event_loop()
+        token = await loop.run_in_executor(None, create_token_sync)
+
+        if not token:
+            return web.json_response({"error": "Помилка отримання токена"}, status=500)
+
+        logger.info(f"✅ Ephemeral token отримано для user_id={user_id}")
+        return web.json_response({
+            "token": token,
+            "expires_at": (now + timedelta(minutes=30)).isoformat(),
+            "model": "gemini-3.1-flash-live-preview",
+        })
+
+    except ImportError:
+        logger.error("❌ google-genai SDK не встановлено")
+        return web.json_response({"error": "SDK не встановлено на сервері"}, status=500)
     except Exception as e:
-        logger.error(f"❌ Невідома помилка: {e}", exc_info=True)
-        return web.json_response(
-            {"error": f"Внутрішня помилка сервера: {str(e)}"},
-            status=500
-        )
+        logger.error(f"❌ Помилка: {e}", exc_info=True)
+        return web.json_response({"error": f"Помилка: {str(e)}"}, status=500)
 
 
 async def handle_save_transcript(request):
-    """
-    POST /api/transcript
-    Зберігає транскрипт голосової сесії.
-
-    Може зберігати в SQLite базу ArtemisBot, якщо доступна.
-    """
-    logger.info("💾 Запит на збереження транскрипту")
-
+    """POST /api/transcript — зберігає транскрипт сесії"""
     try:
         body = await request.json()
-        session_id = body.get('session_id', 'unknown')
-        user_id = body.get('user_id', 0)
         transcript = body.get('transcript', [])
-        duration_ms = body.get('duration_ms', 0)
-
-        logger.info(
-            f"📝 Транскрипт сесії {session_id}: "
-            f"{len(transcript)} повідомлень, "
-            f"{duration_ms / 1000:.1f}с"
-        )
-
-        # Якщо є доступ до бази ArtemisBot — зберігаємо
-        # Поки що просто логуємо
-        for msg in transcript:
-            logger.debug(f"  [{msg.get('role')}] {msg.get('text', '')[:100]}")
-
-        return web.json_response({
-            "status": "ok",
-            "saved": len(transcript),
-        })
-
+        logger.info(f"💾 Транскрипт: {len(transcript)} повідомлень")
+        return web.json_response({"status": "ok", "saved": len(transcript)})
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Невірний формат JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Невірний формат JSON"}, status=400)
     except Exception as e:
-        logger.error(f"❌ Помилка збереження транскрипту: {e}")
-        return web.json_response(
-            {"error": str(e)},
-            status=500
-        )
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def handle_health(request):
-    """
-    GET /api/health
-    Перевірка стану сервера
-    """
+    """GET /api/health — перевірка стану"""
     return web.json_response({
         "status": "ok",
         "version": "1.0.0",
@@ -232,95 +133,34 @@ async def handle_health(request):
     })
 
 
-async def handle_index(request):
-    """
-    GET /
-    Перенаправлення на статику WebApp або інформаційна сторінка
-    """
-    html = """<!DOCTYPE html>
-<html lang="uk">
-<head><meta charset="UTF-8"><title>Artemis Live API</title>
-<style>
-body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: #0a0a0f; color: #e8e8ed; }
-h1 { color: #4285f4; }
-code { background: #1c1c1e; padding: 2px 6px; border-radius: 4px; }
-.endpoint { border-left: 3px solid #4285f4; padding-left: 16px; margin: 16px 0; }
-.method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-.method.post { background: #34a853; color: white; }
-.method.get { background: #4285f4; color: white; }
-</style>
-</head>
-<body>
-<h1>✦ Artemis Live API</h1>
-<p>Сервер для голосової розмови з Артеміс через Gemini Live API</p>
-
-<div class="endpoint">
-<span class="method post">POST</span> <code>/api/token</code>
-<p>Отримати ephemeral token для підключення до Gemini Live API</p>
-</div>
-
-<div class="endpoint">
-<span class="method post">POST</span> <code>/api/transcript</code>
-<p>Зберегти транскрипт голосової сесії</p>
-</div>
-
-<div class="endpoint">
-<span class="method get">GET</span> <code>/api/health</code>
-<p>Перевірка стану сервера</p>
-</div>
-
-<hr>
-<p style="color: #8e8e93; font-size: 14px;">
-  Gemini 3.1 Flash Live ✦ Artemis
-</p>
-</body>
-</html>"""
-    return web.Response(text=html, content_type='text/html')
-
-
 # ============================================================
 # ЗАПУСК
 # ============================================================
 
 def create_app():
-    """Створює aiohttp додаток з маршрутами"""
     app = web.Application(middlewares=[cors_middleware])
-
-    # API endpoints
     app.router.add_post('/api/token', handle_get_token)
     app.router.add_post('/api/transcript', handle_save_transcript)
     app.router.add_get('/api/health', handle_health)
-
-    # Головна сторінка
-    app.router.add_get('/', handle_index)
-
     return app
 
 
 def main():
-    """Точка входу для запуску сервера"""
     import argparse
-
     parser = argparse.ArgumentParser(description='Artemis Live API Server')
-    parser.add_argument('--port', type=int, default=int(os.environ.get('LIVE_API_PORT', 8765)),
-                       help='Порт сервера (за замовчуванням: 8765)')
-    parser.add_argument('--host', type=str, default=os.environ.get('LIVE_API_HOST', '0.0.0.0'),
-                       help='Хост (за замовчуванням: 0.0.0.0)')
-    parser.add_argument('--debug', action='store_true', help='Режим налагодження')
-
+    parser.add_argument('--port', type=int, default=int(os.environ.get('LIVE_API_PORT', 8765)))
+    parser.add_argument('--host', type=str, default=os.environ.get('LIVE_API_HOST', '0.0.0.0'))
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    app = create_app()
-
     if not GEMINI_API_KEY:
-        logger.warning("⚠️ GEMINI_API_KEY не знайдено! Endpoint /api/token не працюватиме.")
-        logger.warning("   Встановіть змінну оточення GEMINI_API_KEY або GEMINI_FREE_KEY")
+        logger.warning("⚠️ GEMINI_API_KEY не знайдено! /api/token не працюватиме.")
 
-    logger.info(f"🚀 Artemis Live API Server запускається на http://{args.host}:{args.port}")
-    web.run_app(app, host=args.host, port=args.port)
+    logger.info(f"🚀 Artemis Live API Server на http://{args.host}:{args.port}")
+    web.run_app(create_app(), host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
