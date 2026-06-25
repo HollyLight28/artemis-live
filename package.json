@@ -1,0 +1,11 @@
+{
+  "name": "artemis-live",
+  "version": "1.0.0",
+  "description": "Artemis Live Voice — голосова розмова з Артеміс через Gemini Live API",
+  "private": true,
+  "scripts": {
+    "dev": "python3 backend/server.py --port 8765 --debug",
+    "start": "python3 backend/server.py --port 8765",
+    "deploy:pages": "cd frontend && npx gh-pages -d ."
+  }
+}

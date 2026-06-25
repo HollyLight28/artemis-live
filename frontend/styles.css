@@ -1,0 +1,552 @@
+/* Artemis Live — Styles */
+/* Telegram WebApp Dark Theme */
+
+:root {
+  --bg-color: var(--tg-theme-bg-color, #0a0a0f);
+  --text-color: var(--tg-theme-text-color, #e8e8ed);
+  --hint-color: var(--tg-theme-hint-color, #8e8e93);
+  --link-color: var(--tg-theme-link-color, #4285f4);
+  --button-color: var(--tg-theme-button-color, #4285f4);
+  --button-text: var(--tg-theme-button-text-color, #ffffff);
+  --secondary-bg: var(--tg-theme-secondary-bg-color, #1c1c1e);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --accent-blue: #4285f4;
+  --accent-red: #ea4335;
+  --accent-yellow: #fbbc05;
+  --accent-green: #34a853;
+  --glow-blue: rgba(66, 133, 244, 0.4);
+  --glow-red: rgba(234, 67, 53, 0.4);
+  --glow-green: rgba(52, 168, 83, 0.4);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Головний контейнер */
+.app-container {
+  width: 100%;
+  max-width: 420px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  position: relative;
+}
+
+/* Шапка */
+.header {
+  width: 100%;
+  text-align: center;
+  padding-top: 20px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-red));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: var(--hint-color);
+  margin-top: 4px;
+}
+
+/* Статус */
+.status-container {
+  width: 100%;
+  text-align: center;
+  padding: 16px 0;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.status-indicator.visible {
+  opacity: 1;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+
+.status-dot.listening {
+  background: var(--accent-green);
+  box-shadow: 0 0 12px var(--glow-green);
+}
+
+.status-dot.thinking {
+  background: var(--accent-yellow);
+  box-shadow: 0 0 12px var(--glow-yellow, rgba(251, 188, 5, 0.4));
+  animation: pulse-dot-thinking 0.8s infinite;
+}
+
+.status-dot.speaking {
+  background: var(--accent-blue);
+  box-shadow: 0 0 12px var(--glow-blue);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+@keyframes pulse-dot-thinking {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.5); opacity: 0.5; }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.5); opacity: 0.5; }
+}
+
+.status-text {
+  color: var(--hint-color);
+  font-size: 13px;
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* Canvas для візуалізації */
+.visualizer-container {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+#audioVisualizer {
+  width: 100%;
+  height: 80px;
+  border-radius: var(--radius);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+#audioVisualizer.active {
+  opacity: 1;
+}
+
+/* Головна кнопка */
+.main-button-container {
+  position: relative;
+  margin: 20px 0;
+}
+
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--accent-blue);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.pulse-ring.active {
+  animation: pulse-ring 2s infinite;
+  opacity: 1;
+}
+
+.pulse-ring.listening {
+  border-color: var(--accent-green);
+}
+
+.pulse-ring.speaking {
+  border-color: var(--accent-blue);
+}
+
+@keyframes pulse-ring {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.2; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+}
+
+.main-button {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+  color: white;
+  font-size: 48px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(66, 133, 244, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.main-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(66, 133, 244, 0.4);
+}
+
+.main-button:active {
+  transform: scale(0.95);
+}
+
+.main-button.disconnected {
+  background: linear-gradient(135deg, #555, #333);
+  box-shadow: none;
+}
+
+.main-button.listening {
+  background: linear-gradient(135deg, var(--accent-green), #059669);
+  box-shadow: 0 8px 32px rgba(52, 168, 83, 0.4);
+  animation: pulse-mic 1.5s infinite;
+}
+
+.main-button.speaking {
+  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+  box-shadow: 0 8px 32px rgba(66, 133, 244, 0.4);
+}
+
+.main-button.thinking {
+  background: linear-gradient(135deg, var(--accent-yellow), #d97706);
+  box-shadow: 0 8px 32px rgba(251, 188, 5, 0.4);
+}
+
+@keyframes pulse-mic {
+  0% { box-shadow: 0 8px 32px rgba(52, 168, 83, 0.4); }
+  50% { box-shadow: 0 8px 48px rgba(52, 168, 83, 0.7); }
+  100% { box-shadow: 0 8px 32px rgba(52, 168, 83, 0.4); }
+}
+
+.main-button-label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--hint-color);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Транскрипт (чат) */
+.chat-container {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+  min-height: 120px;
+  max-height: 300px;
+  scroll-behavior: smooth;
+}
+
+.chat-container::-webkit-scrollbar {
+  width: 3px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.chat-message {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1.5;
+  animation: message-in 0.3s ease;
+  max-width: 90%;
+}
+
+.chat-message.user {
+  background: var(--card-bg);
+  border-left: 3px solid var(--accent-green);
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.chat-message.assistant {
+  background: var(--card-bg);
+  border-left: 3px solid var(--accent-blue);
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.chat-message .label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  opacity: 0.6;
+}
+
+.chat-message.user .label {
+  color: var(--accent-green);
+}
+
+.chat-message.assistant .label {
+  color: var(--accent-blue);
+}
+
+.chat-message .text {
+  word-break: break-word;
+}
+
+.chat-message .timestamp {
+  font-size: 10px;
+  color: var(--hint-color);
+  margin-top: 4px;
+  text-align: right;
+  opacity: 0.5;
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Футер з кнопками */
+.footer {
+  width: 100%;
+  padding: 12px 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.btn-danger {
+  background: rgba(234, 67, 53, 0.15);
+  border: 1px solid rgba(234, 67, 53, 0.3);
+  color: var(--accent-red);
+}
+
+.btn-danger:hover {
+  background: rgba(234, 67, 53, 0.25);
+}
+
+.btn-disconnect {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--hint-color);
+  padding: 8px 24px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-disconnect:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+/* Скелетон (стан завантаження) */
+.skeleton {
+  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255,255,255,0.08) 50%, var(--card-bg) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Ініціалізація (лоадер) */
+.initializing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 20px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.init-text {
+  color: var(--hint-color);
+  font-size: 13px;
+}
+
+/* Темна тема Telegram — адаптація кольорів */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-color: var(--tg-theme-bg-color, #ffffff);
+    --text-color: var(--tg-theme-text-color, #1c1c1e);
+    --hint-color: var(--tg-theme-hint-color, #8e8e93);
+    --secondary-bg: var(--tg-theme-secondary-bg-color, #f2f2f7);
+    --card-bg: rgba(0, 0, 0, 0.03);
+    --border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .main-button {
+    box-shadow: 0 8px 32px rgba(66, 133, 244, 0.2);
+  }
+}
+
+/* Адаптація для маленьких екранів */
+@media (max-height: 700px) {
+  .header {
+    padding-top: 10px;
+  }
+  .header-title {
+    font-size: 16px;
+  }
+  .main-button {
+    width: 100px;
+    height: 100px;
+    font-size: 40px;
+  }
+  .pulse-ring {
+    width: 120px;
+    height: 120px;
+  }
+  .chat-container {
+    max-height: 180px;
+    min-height: 80px;
+  }
+  .visualizer-container {
+    height: 60px;
+  }
+}
+
+/* Анімація появи */
+.fade-in {
+  animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Стан помилки */
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.error-state .error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.error-state .error-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.error-state .error-text {
+  font-size: 13px;
+  color: var(--hint-color);
+  margin-bottom: 20px;
+}
+
+.error-state .btn-retry {
+  background: var(--button-color);
+  color: var(--button-text);
+  border: none;
+  padding: 12px 32px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
