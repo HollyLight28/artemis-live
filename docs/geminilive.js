@@ -320,6 +320,14 @@ class GeminiLiveAPI {
     try {
       await this.initAudioContext();
 
+      // 🔴 БАГ #3 ВИПРАВЛЕНО: перевірка, чи контекст не закрито
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        console.warn('⚠️ AudioContext закрито, пропускаємо аудіо');
+        this.audioQueue = [];
+        this.isPlaying = false;
+        return;
+      }
+
       // Конвертуємо base64 PCM в ArrayBuffer
       const binaryStr = atob(base64Data);
       const bytes = new Uint8Array(binaryStr.length);

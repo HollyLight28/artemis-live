@@ -341,16 +341,26 @@ function handleGeminiResponse(response) {
 
 let micStream = null;
 
-async function toggleMicrophone() {
-  if (!state.client?.connected) {
-    await connectToGemini();
-    return;
-  }
+let isToggling = false;
 
-  if (state.isMicActive) {
-    await stopMicrophone();
-  } else {
-    await startMicrophone();
+async function toggleMicrophone() {
+  // 🔴 БАГ #1 ВИПРАВЛЕНО: блокування повторних викликів
+  if (isToggling) return;
+  isToggling = true;
+
+  try {
+    if (!state.client?.connected) {
+      await connectToGemini();
+      return;
+    }
+
+    if (state.isMicActive) {
+      await stopMicrophone();
+    } else {
+      await startMicrophone();
+    }
+  } finally {
+    isToggling = false;
   }
 }
 

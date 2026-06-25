@@ -112,10 +112,12 @@ class AudioStreamer {
       this.source.disconnect();
       this.source = null;
     }
-    if (this.audioContext) {
+    // 🔴 БАГ #2 ВИПРАВЛЕНО: не закриваємо спільний AudioContext!
+    // Закриваємо тільки якщо AudioContext створено цим streamer-ом
+    if (this.audioContext && this.audioContext !== this.sharedContext) {
       this.audioContext.close().catch(() => {});
-      this.audioContext = null;
     }
+    this.audioContext = null;
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
