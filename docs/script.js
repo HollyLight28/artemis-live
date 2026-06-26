@@ -13,11 +13,11 @@
 
 /**
  * URL сервера береться з параметра ?server=... при відкритті WebApp
- * Якщо параметра нема — використовується дефолтне значення
+ * Якщо параметра нема — використовується HTTPS тунель ngrok
  */
 function getServerUrl() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('server') || 'https://YOUR-SERVER.com/api';
+  return params.get('server') || 'https://sporular-denita-inefficiently.ngrok-free.dev/api';
 }
 
 const CONFIG = {
