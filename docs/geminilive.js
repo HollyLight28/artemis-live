@@ -106,7 +106,7 @@ class GeminiLiveAPI {
 
     this.activityHandling = 'ACTIVITY_HANDLING_UNSPECIFIED';
 
-    this.serviceUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=${this.token}`;
+    this.serviceUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(this.token)}`;
 
     this.connected = false;
     this.webSocket = null;
