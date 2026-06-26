@@ -351,13 +351,14 @@ async function toggleMicrophone() {
   try {
     if (!state.client?.connected) {
       await connectToGemini();
-      return;
     }
 
-    if (state.isMicActive) {
-      await stopMicrophone();
-    } else {
-      await startMicrophone();
+    if (state.client?.connected) {
+      if (state.isMicActive) {
+        await stopMicrophone();
+      } else {
+        await startMicrophone();
+      }
     }
   } finally {
     isToggling = false;
