@@ -13,11 +13,6 @@ class AudioStreamer {
     this.processor = null;
     this.isStreaming = false;
     this.deviceId = null;
-    this.sharedContext = null; // спільний AudioContext від AudioPlayer
-  }
-
-  setSharedContext(ctx) {
-    this.sharedContext = ctx;
   }
 
   async start(deviceId = null) {
@@ -36,12 +31,8 @@ class AudioStreamer {
 
       this.mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Використовуємо спільний AudioContext якщо є
-      if (this.sharedContext && this.sharedContext.state !== 'closed') {
-        this.audioContext = this.sharedContext;
-      } else {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
+      // Створюємо власний AudioContext для захоплення мікрофона
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
       const sourceRate = this.audioContext.sampleRate;
       const targetRate = 16000;
@@ -67,7 +58,6 @@ class AudioStreamer {
       };
 
       this.source.connect(this.processor);
-      this.processor.connect(this.audioContext.destination);
       this.isStreaming = true;
 
       console.log('🎤 Аудіо стрімінг запущено (sourceRate:', sourceRate, ')');
@@ -112,9 +102,7 @@ class AudioStreamer {
       this.source.disconnect();
       this.source = null;
     }
-    // 🔴 БАГ #2 ВИПРАВЛЕНО: не закриваємо спільний AudioContext!
-    // Закриваємо тільки якщо AudioContext створено цим streamer-ом
-    if (this.audioContext && this.audioContext !== this.sharedContext) {
+    if (this.audioContext) {
       this.audioContext.close().catch(() => {});
     }
     this.audioContext = null;
@@ -150,10 +138,6 @@ class AudioPlayer {
     this.audioContext = null;
     this.gainNode = null;
     this.volume = 0.8;
-  }
-
-  getContext() {
-    return this.audioContext;
   }
 
   async init() {

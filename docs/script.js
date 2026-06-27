@@ -263,7 +263,6 @@ async function connectToGemini() {
     state.audioPlayer = new AudioPlayer();
     await state.audioPlayer.init();
     state.audioStreamer = new AudioStreamer(state.client);
-    state.audioStreamer.setSharedContext(state.audioPlayer.getContext());
 
     state.sessionStartTime = Date.now();
     state.sessionId = `session_${Date.now()}`;
@@ -287,7 +286,9 @@ function handleGeminiResponse(response) {
       break;
 
     case MultimodalLiveResponseType.AUDIO:
-      state.client.playAudioChunk(response.data);
+      if (state.audioPlayer) {
+        state.audioPlayer.play(response.data);
+      }
       break;
 
     case MultimodalLiveResponseType.TEXT:
@@ -322,7 +323,9 @@ function handleGeminiResponse(response) {
 
     case MultimodalLiveResponseType.INTERRUPTED:
       console.log('🗣️ Переривання');
-      state.client.stopPlayback();
+      if (state.audioPlayer) {
+        state.audioPlayer.stop();
+      }
       break;
 
     case MultimodalLiveResponseType.TURN_COMPLETE:
@@ -338,8 +341,6 @@ function handleGeminiResponse(response) {
 // ============================================================
 // КЕРУВАННЯ МІКРОФОНОМ
 // ============================================================
-
-let micStream = null;
 
 let isToggling = false;
 
@@ -367,22 +368,12 @@ async function toggleMicrophone() {
 
 async function startMicrophone() {
   try {
-    // Запитуємо мікрофон
-    micStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: 16000,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
-
-    // Запускаємо стрімінг через AudioStreamer
+    // AudioStreamer сам запитує мікрофон (один getUserMedia)
     await state.audioStreamer.start();
 
-    // Запускаємо візуалізацію
-    if (state.visualizer) {
-      state.visualizer.start(micStream);
+    // Запускаємо візуалізацію з того ж stream
+    if (state.visualizer && state.audioStreamer.mediaStream) {
+      state.visualizer.start(state.audioStreamer.mediaStream);
       document.getElementById('audioVisualizer')?.classList.add('active');
     }
 
@@ -405,10 +396,6 @@ async function stopMicrophone() {
   if (state.visualizer) {
     state.visualizer.stop();
     document.getElementById('audioVisualizer')?.classList.remove('active');
-  }
-  if (micStream) {
-    micStream.getTracks().forEach(track => track.stop());
-    micStream = null;
   }
 
   setStatus('connected', 'Натисни і говори');
@@ -493,10 +480,6 @@ async function saveTranscript() {
 function cleanup() {
   state.isMicActive = false;
   state.audioStreamer = null;
-  if (micStream) {
-    micStream.getTracks().forEach(track => track.stop());
-    micStream = null;
-  }
 }
 
 // ============================================================

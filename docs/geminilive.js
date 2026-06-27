@@ -117,10 +117,6 @@ class GeminiLiveAPI {
     this.onClose = () => {};
     this.onError = () => {};
 
-    // Буфери для аудіо
-    this.audioQueue = [];
-    this.isPlaying = false;
-    this.audioContext = null;
   }
 
   setSystemInstructions(text) {
@@ -137,24 +133,35 @@ class GeminiLiveAPI {
       generationConfig: {
         responseModalities: this.responseModalities,
         temperature: this.temperature,
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: this.voiceName,
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: this.voiceName,
+            },
           },
         },
-        automaticActivityDetection: this.automaticActivityDetection,
-        activityHandling: this.activityHandling,
       },
       systemInstruction: {
         parts: [{ text: this.systemInstructions }],
       },
+      realtimeInputConfig: {
+        automaticActivityDetection: {
+          disabled: this.automaticActivityDetection.disabled,
+          silenceDurationMs: this.automaticActivityDetection.silence_duration_ms,
+          prefixPaddingMs: this.automaticActivityDetection.prefix_padding_ms,
+          endOfSpeechSensitivity: this.automaticActivityDetection.end_of_speech_sensitivity,
+          startOfSpeechSensitivity: this.automaticActivityDetection.start_of_speech_sensitivity,
+        },
+        activityHandling: this.activityHandling,
+        turnCoverage: 'TURN_INCLUDES_ONLY_ACTIVITY',
+      },
     };
 
     if (this.inputAudioTranscription) {
-      setup.generationConfig.inputAudioTranscription = {};
+      setup.inputAudioTranscription = {};
     }
     if (this.outputAudioTranscription) {
-      setup.generationConfig.outputAudioTranscription = {};
+      setup.outputAudioTranscription = {};
     }
 
     if (this.enableFunctionCalls && this.functions.length > 0) {
@@ -221,7 +228,7 @@ class GeminiLiveAPI {
 
       this.webSocket.onerror = (event) => {
         console.error('❌ WebSocket помилка:', event);
-        this.onError('Помилка WebSocket з'єднання');
+        this.onError('Помилка WebSocket з’єднання');
         reject(new Error('WebSocket error'));
       };
 
@@ -246,8 +253,6 @@ class GeminiLiveAPI {
       this.webSocket = null;
     }
     this.connected = false;
-    this.audioQueue = [];
-    this.isPlaying = false;
   }
 
   async sendRealtimeInput(input) {
@@ -289,84 +294,5 @@ class GeminiLiveAPI {
     });
   }
 
-  /**
-   * Програвання аудіо з Live API
-   */
-  async initAudioContext() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
-    }
-  }
 
-  playAudioChunk(base64Data) {
-    this.audioQueue.push(base64Data);
-    if (!this.isPlaying) {
-      this.processAudioQueue();
-    }
-  }
-
-  async processAudioQueue() {
-    if (this.audioQueue.length === 0) {
-      this.isPlaying = false;
-      return;
-    }
-
-    this.isPlaying = true;
-    const base64Data = this.audioQueue.shift();
-
-    try {
-      await this.initAudioContext();
-
-      // 🔴 БАГ #3 ВИПРАВЛЕНО: перевірка, чи контекст не закрито
-      if (!this.audioContext || this.audioContext.state === 'closed') {
-        console.warn('⚠️ AudioContext закрито, пропускаємо аудіо');
-        this.audioQueue = [];
-        this.isPlaying = false;
-        return;
-      }
-
-      // Конвертуємо base64 PCM в ArrayBuffer
-      const binaryStr = atob(base64Data);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-
-      // Створюємо AudioBuffer з PCM даних (24kHz, 16-bit)
-      const sampleRate = 24000;
-      const frameCount = bytes.length / 2; // 16-bit = 2 bytes per sample
-      const audioBuffer = this.audioContext.createBuffer(1, frameCount, sampleRate);
-      const channelData = audioBuffer.getChannelData(0);
-
-      // Конвертуємо 16-bit PCM в float32
-      for (let i = 0; i < frameCount; i++) {
-        const sample = (bytes[i * 2] | (bytes[i * 2 + 1] << 8));
-        channelData[i] = sample / 32768.0;
-      }
-
-      // Програємо
-      const source = this.audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.audioContext.destination);
-      source.onended = () => {
-        this.processAudioQueue();
-      };
-      source.start();
-    } catch (err) {
-      console.error('❌ Помилка програвання аудіо:', err);
-      this.processAudioQueue();
-    }
-  }
-
-  stopPlayback() {
-    this.audioQueue = [];
-    this.isPlaying = false;
-    if (this.audioContext) {
-      this.audioContext.close().catch(() => {});
-      this.audioContext = null;
-    }
-  }
 }

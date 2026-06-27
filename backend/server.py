@@ -54,6 +54,31 @@ async def cors_middleware(request, handler):
     return response
 
 # ============================================================
+# КЕШУВАННЯ genai.Client
+# ============================================================
+
+_genai_client = None
+
+def _get_genai_client():
+    """Ліниве створення і кешування genai.Client.
+    Імпорт SDK відбувається тільки при першому виклику (~15с).
+    """
+    global _genai_client
+    if _genai_client is None:
+        from google import genai
+        _genai_client = genai.Client(
+            api_key=GEMINI_API_KEY,
+            http_options={'api_version': 'v1alpha'}
+        )
+    return _genai_client
+
+def _create_token_sync():
+    """Синхронна генерація ephemeral token (для run_in_executor)."""
+    client = _get_genai_client()
+    result = client.auth_tokens.create(config={'uses': 1})
+    return result.name
+
+# ============================================================
 # ЕНДПОІНТИ
 # ============================================================
 
@@ -78,19 +103,9 @@ async def handle_get_token(request):
         user_id = body.get('user_id', 'unknown')
         now = datetime.now(timezone.utc)
 
-        # Lazy import — SDK імпортується тільки тут (перший раз ~15с)
-        from google import genai
-
-        def create_token_sync():
-            client = genai.Client(
-                api_key=GEMINI_API_KEY,
-                http_options={'api_version': 'v1alpha'}
-            )
-            result = client.auth_tokens.create(config={'uses': 1})
-            return result.name
-
+        # Використовуємо кешований клієнт (лінивий імпорт)
         loop = asyncio.get_event_loop()
-        token = await loop.run_in_executor(None, create_token_sync)
+        token = await loop.run_in_executor(None, _create_token_sync)
 
         if not token:
             return web.json_response({"error": "Помилка отримання токена"}, status=500)
