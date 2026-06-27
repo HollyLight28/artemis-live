@@ -58,13 +58,13 @@ let els = {};
 function initDOM() {
   els = {
     app: document.getElementById('app'),
-    statusIndicator: document.getElementById('statusIndicator'),
-    statusDot: document.getElementById('statusDot'),
+    avatarSection: document.getElementById('avatarSection'),
+    avatarImg: document.getElementById('artemisAvatar'),
+    auraRing: document.getElementById('auraRing'),
     statusText: document.getElementById('statusText'),
     mainButton: document.getElementById('mainButton'),
     mainButtonIcon: document.getElementById('mainButtonIcon'),
     mainButtonLabel: document.getElementById('mainButtonLabel'),
-    pulseRing: document.getElementById('pulseRing'),
     chatContainer: document.getElementById('chatContainer'),
     visualizer: document.getElementById('audioVisualizer'),
     disconnectBtn: document.getElementById('disconnectBtn'),
@@ -80,71 +80,85 @@ function initDOM() {
 function setStatus(newStatus, text) {
   state.status = newStatus;
 
-  // Ховаємо всі статуси
-  els.statusIndicator.classList.remove('visible');
-  els.statusDot.className = 'status-dot';
-  els.pulseRing.className = 'pulse-ring';
+  // Оновлюємо класи на avatar-section, aura-ring, status-text, main-button
+  const avatar = els.avatarSection;
+  const aura = els.auraRing;
+  const label = els.mainButtonLabel;
+  const stxt = els.statusText;
+
+  avatar.className = 'avatar-section';
+  aura.className = 'aura-ring';
+  label.className = 'main-button-label';
+  stxt.className = 'status-text';
   els.mainButton.className = 'main-button';
 
   switch (newStatus) {
     case 'connecting':
-      els.statusIndicator.classList.add('visible');
-      els.statusDot.classList.add('listening');
+      avatar.classList.add('connecting');
+      aura.classList.add('active', 'connecting');
       els.mainButton.classList.add('disconnected');
       els.mainButtonIcon.textContent = '⏳';
-      els.mainButtonLabel.textContent = 'Підключення...';
-      els.statusText.textContent = text || 'Підключаюсь до Артеміс...';
+      label.textContent = 'Підключення...';
+      stxt.textContent = text || 'Підключаюсь до Артеміс...';
       break;
 
     case 'connected':
+      avatar.classList.add('connected');
       els.mainButton.classList.add('listening');
       els.mainButtonIcon.textContent = '🎤';
-      els.mainButtonLabel.textContent = 'Натисни і говори';
-      els.statusText.textContent = text || 'Готовий до розмови';
+      label.textContent = 'Натисни і говори';
+      label.classList.add('listening');
+      stxt.textContent = text || 'Готовий до розмови';
       break;
 
     case 'listening':
-      els.statusIndicator.classList.add('visible');
-      els.statusDot.classList.add('listening');
-      els.pulseRing.classList.add('active', 'listening');
+      avatar.classList.add('listening');
+      aura.classList.add('active', 'listening');
       els.mainButton.classList.add('listening');
       els.mainButtonIcon.textContent = '🎙️';
-      els.mainButtonLabel.textContent = 'Слухаю...';
-      els.statusText.textContent = text || 'Я тебе слухаю...';
+      label.textContent = 'Слухаю...';
+      label.classList.add('listening');
+      stxt.textContent = text || 'Я тебе слухаю...';
+      stxt.classList.add('listening');
       break;
 
     case 'thinking':
-      els.statusIndicator.classList.add('visible');
-      els.statusDot.classList.add('thinking');
-      els.pulseRing.classList.add('active', 'listening');
+      avatar.classList.add('thinking');
+      aura.classList.add('active', 'thinking');
       els.mainButton.classList.add('thinking');
       els.mainButtonIcon.textContent = '💭';
-      els.mainButtonLabel.textContent = 'Думаю...';
-      els.statusText.textContent = text || 'Обдумую відповідь...';
+      label.textContent = 'Думаю...';
+      label.classList.add('thinking');
+      stxt.textContent = text || 'Обдумую відповідь...';
+      stxt.classList.add('thinking');
       break;
 
     case 'speaking':
-      els.statusIndicator.classList.add('visible');
-      els.statusDot.classList.add('speaking');
-      els.pulseRing.classList.add('active', 'speaking');
+      avatar.classList.add('speaking');
+      aura.classList.add('active', 'speaking');
       els.mainButton.classList.add('speaking');
       els.mainButtonIcon.textContent = '🔊';
-      els.mainButtonLabel.textContent = 'Відповідає';
-      els.statusText.textContent = text || 'Артеміс відповідає...';
+      label.textContent = 'Відповідає';
+      label.classList.add('speaking');
+      stxt.textContent = text || 'Артеміс відповідає...';
+      stxt.classList.add('speaking');
       break;
 
     case 'disconnected':
+      avatar.classList.add('disconnected');
       els.mainButton.classList.add('disconnected');
       els.mainButtonIcon.textContent = '🎤';
-      els.mainButtonLabel.textContent = 'Не підключено';
-      els.statusText.textContent = text || 'Натисни, щоб почати розмову';
+      label.textContent = 'Не підключено';
+      stxt.textContent = text || 'Натисни, щоб почати розмову';
       break;
 
     case 'error':
+      avatar.classList.add('disconnected');
       els.mainButton.classList.add('disconnected');
       els.mainButtonIcon.textContent = '⚠️';
-      els.mainButtonLabel.textContent = 'Помилка';
-      els.statusText.textContent = text || 'Сталася помилка';
+      label.textContent = 'Помилка';
+      stxt.textContent = text || 'Сталася помилка';
+      stxt.classList.add('error');
       break;
   }
 }

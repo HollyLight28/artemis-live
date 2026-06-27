@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" id="artemis-avatar">
+  <defs>
+    <!-- Градієнт для сяйва -->
+    <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4285f4" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4285f4" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Градієнт для обличчя -->
+    <linearGradient id="faceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2a3e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <!-- Градієнт для очей (реакція на слухання) -->
+    <radialGradient id="eyeGlow">
+      <stop offset="0%" stop-color="#4285f4" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#4285f4" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Фільтр світіння -->
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Сяйво навколо -->
+  <circle id="aura" cx="100" cy="100" r="95" fill="url(#glowGrad)" class="aura"/>
+
+  <!-- Зірочки (декоративні) -->
+  <g class="stars">
+    <circle cx="30" cy="35" r="1.5" fill="#fbbc05" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="170" cy="45" r="1" fill="#4285f4" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="25" cy="150" r="1.2" fill="#ea4335" opacity="0.4">
+      <animate attributeName="opacity" values="0.4;0.1;0.4" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="175" cy="140" r="1.8" fill="#34a853" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.15;0.5" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Голова / обличчя -->
+  <g id="head" class="head">
+    <!-- Основа голови -->
+    <ellipse cx="100" cy="100" rx="42" ry="48" fill="url(#faceGrad)" stroke="#3a3a5e" stroke-width="1.5" class="face-base"/>
+
+    <!-- Місяць-діадема -->
+    <path d="M100 52 C105 48, 115 50, 118 55 C113 58, 108 56, 100 52Z"
+          fill="#4285f4" filter="url(#neonGlow)" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;0.5;0.8" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M82 54 C78 50, 72 52, 70 57 C74 59, 78 57, 82 54Z"
+          fill="#4285f4" filter="url(#neonGlow)" opacity="0.5"/>
+
+    <!-- Волосся / коси -->
+    <path d="M62 85 C58 95, 56 110, 60 125 C63 130, 66 128, 64 120 C62 108, 64 95, 68 90Z"
+          fill="#2a2a4e" opacity="0.7"/>
+    <path d="M138 85 C142 95, 144 110, 140 125 C137 130, 134 128, 136 120 C138 108, 136 95, 132 90Z"
+          fill="#2a2a4e" opacity="0.7"/>
+
+    <!-- Лук (декоративний) -->
+    <path d="M58 90 C50 100, 48 115, 55 125" fill="none" stroke="#4285f4" stroke-width="1.2" opacity="0.4" class="bow"/>
+    <path d="M142 90 C150 100, 152 115, 145 125" fill="none" stroke="#4285f4" stroke-width="1.2" opacity="0.4" class="bow"/>
+
+    <!-- Очі -->
+    <g id="eyes" class="eyes">
+      <!-- Ліве око -->
+      <ellipse cx="85" cy="96" rx="5" ry="6" fill="none" stroke="#6a6a8e" stroke-width="1.2" class="eye-outline"/>
+      <ellipse cx="85" cy="96" rx="3" ry="3.5" fill="#4285f4" class="eye-pupil">
+        <animate attributeName="ry" values="3.5;0.5;3.5" dur="4s" repeatCount="indefinite" begin="2s"/>
+      </ellipse>
+      <circle cx="85" cy="94" r="1.2" fill="#ffffff" opacity="0.8" class="eye-shine"/>
+
+      <!-- Праве око -->
+      <ellipse cx="115" cy="96" rx="5" ry="6" fill="none" stroke="#6a6a8e" stroke-width="1.2" class="eye-outline"/>
+      <ellipse cx="115" cy="96" rx="3" ry="3.5" fill="#4285f4" class="eye-pupil">
+        <animate attributeName="ry" values="3.5;0.5;3.5" dur="4s" repeatCount="indefinite" begin="2s"/>
+      </ellipse>
+      <circle cx="115" cy="94" r="1.2" fill="#ffffff" opacity="0.8" class="eye-shine"/>
+    </g>
+
+    <!-- Ніс -->
+    <path d="M98 102 L100 106 L102 102" fill="none" stroke="#5a5a7e" stroke-width="1" class="nose"/>
+
+    <!-- Рот -->
+    <path id="mouth" d="M92 112 Q100 116 108 112" fill="none" stroke="#6a6a8e" stroke-width="1.2" class="mouth-default">
+      <animate attributeName="d" values="M92 112 Q100 116 108 112;M92 112 Q100 112 108 112;M92 112 Q100 116 108 112"
+               dur="2s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Щоки (рум'янець) -->
+    <ellipse cx="75" cy="108" rx="6" ry="3" fill="#ea4335" opacity="0.1"/>
+    <ellipse cx="125" cy="108" rx="6" ry="3" fill="#ea4335" opacity="0.1"/>
+  </g>
+</svg>

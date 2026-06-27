@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="theme-color" content="#0a0a1a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss:; connect-src 'self' https: wss:; media-src 'self' blob:; img-src 'self' data: blob:;" />
-  <title>Artemis — Live Voice</title>
+  <title>✦ АРТЕМІС — Live Voice</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* Критичні стилі для швидкого першого відображення */
-    body { margin: 0; background: var(--tg-theme-bg-color, #0a0a0f); }
+    body { margin: 0; background: #0a0a1a; }
     #initializing {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       min-height: 100vh; gap: 20px;
+      position: relative; z-index: 10;
     }
     #app { display: none; }
   </style>
@@ -22,7 +22,7 @@
 <body>
   <!-- Ініціалізація -->
   <div id="initializing" class="initializing">
-    <div class="spinner"></div>
+    <div class="loader-pulse"></div>
     <div class="init-text">Завантаження Артеміс...</div>
   </div>
 
@@ -36,29 +36,26 @@
 
   <!-- Головний додаток -->
   <div id="app" class="app-container">
-    <!-- Шапка -->
-    <div class="header fade-in">
-      <div class="header-title">✦ АРТЕМІС ✦</div>
-      <div class="header-subtitle">Голосова розмова</div>
+    <!-- Аватар з анімацією -->
+    <div id="avatarSection" class="avatar-section disconnected">
+      <div class="avatar-container">
+        <div id="auraRing" class="aura-ring"></div>
+        <img id="artemisAvatar" src="artemis-avatar.svg" width="120" height="120" alt="Артеміс" style="display:block;">
+      </div>
     </div>
 
     <!-- Статус -->
     <div class="status-container">
-      <div id="statusIndicator" class="status-indicator">
-        <div id="statusDot" class="status-dot"></div>
-        <span id="statusText" style="display:none;"></span>
-      </div>
       <div id="statusText" class="status-text">Натисни, щоб почати</div>
     </div>
 
     <!-- Візуалізатор -->
     <div class="visualizer-container">
-      <canvas id="audioVisualizer" width="800" height="160"></canvas>
+      <canvas id="audioVisualizer" width="800" height="120"></canvas>
     </div>
 
     <!-- Головна кнопка -->
     <div class="main-button-container">
-      <div id="pulseRing" class="pulse-ring"></div>
       <button id="mainButton" class="main-button disconnected">
         <span id="mainButtonIcon">🎤</span>
       </button>
@@ -70,14 +67,10 @@
 
     <!-- Футер -->
     <div class="footer">
-      <div class="footer-buttons">
-        <button id="disconnectBtn" class="btn-disconnect" style="display:none;">
-          ✕ Завершити розмову
-        </button>
-      </div>
-      <div style="font-size:10px; color:var(--hint-color); opacity:0.4; margin-top:4px;">
-        Gemini 3.1 Flash Live
-      </div>
+      <button id="disconnectBtn" class="btn-disconnect" style="display:none;">
+        ✕ Завершити
+      </button>
+      <div class="footer-version">✦ АРТЕМІС ✦ — Gemini Live</div>
     </div>
   </div>
 
